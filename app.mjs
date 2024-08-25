@@ -15,7 +15,7 @@ const port = 3000;
 
 // Update CORS configuration
 app.use(cors({
-  origin: ['https://greenhugebrain.github.io/Gallery-Front/', 'https://greenhugebrain.github.io/Gallery-Front/'], // Adjust to your frontend URL
+  origin: ['https://greenhugebrain.github.io'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'] // Add 'Authorization' here
 }));
