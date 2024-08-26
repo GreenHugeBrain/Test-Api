@@ -1,31 +1,19 @@
 import { Router } from 'express';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
+import axios from 'axios';
+import FormData from 'form-data';
 import User from '../databaseSchemas/userSchema.mjs';
-import Image from '../databaseSchemas/imageSchema.mjs'; // Renamed to Image
+import Image from '../databaseSchemas/imageSchema.mjs';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 const router = Router();
 const JWT_SECRET = 'sPz}Plds`zo@<|bF2q-YZ7Oz]V:R>,Gi?MperRk.n$G%{<(L1DLGT8l4Je-x9.^';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const IMGBB_API_KEY = '664ad832c3a1b6e6541c5b0da954b481';
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadDir = path.join(__dirname, '../../uploads/');
-        fs.mkdirSync(uploadDir, { recursive: true });
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
-    }
-});
-
-const upload = multer({ storage: storage });
+// მულტერის კონფიგურაცია დროებითი შენახვისთვის მეხსიერებაში
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Register route
 router.post('/register', async (req, res) => {
@@ -49,6 +37,7 @@ router.post('/register', async (req, res) => {
     }
 });
 
+// Login route
 router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -86,7 +75,20 @@ router.post('/images', upload.single('image'), async (req, res) => {
         }
 
         const { title, description } = req.body;
-        const imageUrl = `/uploads/${req.file.filename}`;
+
+        // ImgBB-ზე ატვირთვა
+        const formData = new FormData();
+        formData.append('image', req.file.buffer.toString('base64'));
+
+        const response = await axios.post(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, formData, {
+            headers: formData.getHeaders()
+        });
+
+        if (!response.data.success) {
+            throw new Error('Failed to upload image to ImgBB');
+        }
+
+        const imageUrl = response.data.data.url;
 
         const newImage = new Image({ title, image: imageUrl, description });
 
